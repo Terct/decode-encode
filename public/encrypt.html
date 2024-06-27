@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encrypt Text</title>
+    <!-- Inclua a biblioteca JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+</head>
+<body>
+    <h1>Encrypt Text</h1>
+    <form id="encryptForm">
+        <label for="plaintext">Text to Encrypt:</label><br>
+        <textarea id="plaintext" name="plaintext" rows="4" cols="50"></textarea><br><br>
+        <label for="key">Encryption Key:</label><br>
+        <input type="text" id="key" name="key"><br><br>
+        <button type="button" onclick="encryptText()">Encrypt</button><br><br>
+        <div id="encryptionResult" style="display: none;">
+            <p><strong>Encrypted Text:</strong></p>
+            <textarea id="encryptedText" readonly rows="4" cols="50"></textarea><br><br>
+            <p><strong>IV:</strong></p>
+            <textarea id="iv" readonly rows="2" cols="50"></textarea><br><br>
+            <button type="button" onclick="promptFileNameAndDownload()">Download ZIP</button>
+        </div>
+    </form>
+
+    <script>
+        async function encryptText() {
+            const plaintext = document.getElementById('plaintext').value;
+            const key = document.getElementById('key').value;
+
+            if (!plaintext || !key) {
+                alert('Please enter both plaintext and key.');
+                return;
+            }
+
+            const response = await fetch('/encrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ plaintext, key })
+            });
+
+            const data = await response.json();
+
+            // Exibir o texto criptografado e o IV na interface
+            document.getElementById('encryptedText').value = data.encryptedText;
+            document.getElementById('iv').value = data.iv;
+
+            // Mostrar a seção de resultado de criptografia
+            document.getElementById('encryptionResult').style.display = 'block';
+        }
+
+        async function promptFileNameAndDownload() {
+            const plaintext = document.getElementById('plaintext').value;
+            const key = document.getElementById('key').value;
+
+            if (!plaintext || !key) {
+                alert('Please enter both plaintext and key.');
+                return;
+            }
+
+            // Solicitar o nome do arquivo ZIP ao usuário
+            const fileName = prompt('Enter the name for the ZIP file:', 'encrypted_data');
+            if (!fileName) {
+                return; // Cancelado pelo usuário
+            }
+
+            const response = await fetch('/encrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ plaintext, key })
+            });
+
+            const data = await response.json();
+
+            // Criar o arquivo ZIP com o nome fornecido pelo usuário
+            const zip = new JSZip();
+            zip.file('encrypted_text.txt', data.encryptedText);
+            zip.file('iv.txt', data.iv);
+
+            zip.generateAsync({ type: 'blob' })
+                .then(function(content) {
+                    // Criar um URL para o arquivo ZIP
+                    const url = URL.createObjectURL(content);
+
+                    // Criar um link para download
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${fileName}-AES.zip`; // Nome do arquivo ZIP conforme fornecido pelo usuário
+
+                    // Adicionar o link ao corpo do documento e clicar nele para iniciar o download
+                    document.body.appendChild(a);
+                    a.click();
+
+                    // Remover o link após o download
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+        }
+    </script>
+</body>
+</html>

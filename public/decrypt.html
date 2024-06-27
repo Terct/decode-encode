@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decrypt Text</title>
+</head>
+<body>
+    <h1>Decrypt Text</h1>
+    <form id="decryptForm">
+        <label for="encryptedtext">Encrypted Text:</label><br>
+        <textarea id="encryptedtext" name="encryptedtext" rows="4" cols="50"></textarea><br><br>
+        <label for="key">Decryption Key:</label><br>
+        <input type="text" id="key" name="key"><br><br>
+        <label for="iv">Initialization Vector (IV) <span>(optional)</span>:</label><br>
+        <textarea id="iv" name="iv" rows="2" cols="50"></textarea><br><br>
+        <button type="button" onclick="decryptText()">Decrypt</button><br><br>
+        <label for="decryptedtext">Decrypted Text:</label><br>
+        <textarea id="decryptedtext" name="decryptedtext" rows="4" cols="50" readonly></textarea>
+    </form>
+
+    <script>
+        async function decryptText() {
+            const encryptedText = document.getElementById('encryptedtext').value;
+            const key = document.getElementById('key').value;
+            let iv = document.getElementById('iv').value;
+
+            // Verifica se o campo de IV está vazio
+            if (iv.trim() === '') {
+                iv = null; // Define como null se estiver vazio
+            }
+
+            if (!encryptedText || !key) {
+                alert('Please enter encrypted text and key.');
+                return;
+            }
+
+            const requestBody = { encryptedText, key };
+            if (iv !== null) {
+                requestBody.iv = iv;
+            }
+
+            const response = await fetch('/decrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+            document.getElementById('decryptedtext').value = data.decryptedText;
+        }
+    </script>
+</body>
+</html>
